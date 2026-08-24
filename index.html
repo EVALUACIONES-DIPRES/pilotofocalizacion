@@ -1326,9 +1326,24 @@ footer .wrap{max-width:74ch}
   /* ── guardado: local siempre, y a Google Sheets cuando hay URL configurada ── */
   // 1) Despliega el Apps Script (ver Code.gs adjunto) como Web App.
   // 2) Pega aquí la URL que te entrega el despliegue (termina en /exec).
-  var SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbx8Rs_90_sLXKEJrdVpmgYRHN5srPZeBqZ-VDLG_FtZAfliyugBy9wHmTywjmjfMLeh/exec';
+  var SHEETS_API_URL = 'PEGA_AQUI_LA_URL_DE_TU_APPS_SCRIPT';
 
   function apiConfigured(){ return SHEETS_API_URL && SHEETS_API_URL.indexOf('https://') === 0; }
+
+  /* ── claves legibles en Sheets: el HTML numera C0/H0 internamente, pero la
+     columna visible dice "1", "H1"... Esto sube +1 solo al mandar/leer de Sheets,
+     sin tocar el resto del sistema. ── */
+  function shiftKey_(k, delta){
+    var m = k.match(/^([A-Za-z]+\d+)-([CH])(\d+)((?:-.*)?)$/);
+    if(!m) return k;
+    return m[1]+'-'+m[2]+(parseInt(m[3],10)+delta)+m[4];
+  }
+  function toSheetKeys_(o){
+    var out={}; Object.keys(o).forEach(function(k){ out[shiftKey_(k,1)]=o[k]; }); return out;
+  }
+  function fromSheetKeys_(o){
+    var out={}; Object.keys(o).forEach(function(k){ out[shiftKey_(k,-1)]=o[k]; }); return out;
+  }
 
   function setSave(t){ var s=document.getElementById('savestate'); if(s) s.textContent=t; }
   function setMode(t){ var b=document.getElementById('mode'); if(b) b.textContent=t; }
@@ -1361,7 +1376,7 @@ footer .wrap{max-width:74ch}
     fetch(SHEETS_API_URL, {
       method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'}, // evita preflight CORS en Apps Script
-      body: JSON.stringify({usuario:getUser()||'(sin nombre)', estado:o})
+      body: JSON.stringify({usuario:getUser()||'(sin nombre)', estado:toSheetKeys_(o)})
     })
       .then(function(r){ if(!r.ok) throw 0; return r.json(); })
       .then(function(res){
@@ -1383,7 +1398,7 @@ footer .wrap{max-width:74ch}
       .then(function(r){ if(!r.ok) throw 0; return r.json(); })
       .then(function(res){
         if(!res || !res.estado) throw 0;
-        apply(res.estado); if(repaint) paint(); return true;
+        apply(fromSheetKeys_(res.estado)); if(repaint) paint(); return true;
       })
       .catch(function(){ return false; });
   }
