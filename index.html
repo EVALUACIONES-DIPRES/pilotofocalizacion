@@ -276,12 +276,18 @@ tr:target td{background:var(--brand-soft)!important}
 
 /* ═══ fichas ═══ */
 .ficha{background:var(--surface); border:1px solid var(--rule); border-radius:12px;
-  margin-bottom:11px; box-shadow:var(--shadow); overflow:hidden; scroll-margin-top:64px}
+  margin-bottom:11px; box-shadow:var(--shadow); overflow:visible; scroll-margin-top:64px}
 .ficha[open]{box-shadow:var(--shadow-2)}
 .ficha>summary{list-style:none; cursor:pointer; padding:17px 22px; display:flex; gap:16px;
-  align-items:center; flex-wrap:wrap}
+  align-items:center; flex-wrap:wrap;
+  position:sticky; top:var(--ficha-sticky-top,52px); z-index:10;
+  background:var(--surface); border-radius:12px 12px 0 0}
+.ficha:not([open])>summary{border-radius:12px}
 .ficha>summary::-webkit-details-marker{display:none}
 .ficha>summary:hover{background:var(--surface-2)}
+.ficha[open]>summary{box-shadow:0 2px 6px rgba(15,56,67,.05)}
+:root[data-theme="dark"] .ficha[open]>summary{box-shadow:0 2px 6px rgba(0,0,0,.35)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ficha[open]>summary{box-shadow:0 2px 6px rgba(0,0,0,.35)}}
 .chip{font-family:"IBM Plex Mono",monospace; font-weight:700; font-size:11.5px;
   background:var(--brand); color:var(--surface); padding:5px 10px; border-radius:6px; flex:none}
 :root[data-theme="dark"] .chip{color:#0B1113}
@@ -290,7 +296,7 @@ tr:target td{background:var(--brand-soft)!important}
 .sum-main h3{font-size:20px; font-weight:450; letter-spacing:-.012em; line-height:1.22}
 .sum-sub{font-size:12.2px; color:var(--ink-3); margin-top:4px}
 .sum-side{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
-.ficha-body{padding:2px 22px 26px; border-top:1px solid var(--rule)}
+.ficha-body{padding:2px 22px 26px; border-radius:0 0 12px 12px}
 .blk{margin-top:26px}
 .blk-h{font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--brand-3);
   font-weight:700; margin-bottom:12px; display:flex; align-items:center; gap:12px}
@@ -1282,6 +1288,17 @@ footer .wrap{max-width:74ch}
 <footer><div class="wrap">Documento de trabajo interno. Los montos ejecutados 2025 provienen de la base de Monitoreo de programas sociales y no sociales. Las citas normativas deben verificarse contra el texto vigente a la fecha de concesión de cada beneficio antes de sustentar un hallazgo. Cada hipótesis tiene ancla propia — por ejemplo #P1-H7 — para citarla en actas y minutas.</div></footer>
 <script>
 (function(){
+  /* ── encabezado de ficha pegajoso: se ajusta a la altura real de la barra de navegación ── */
+  function setStickyOffset(){
+    var nav=document.querySelector('.jump');
+    var h=nav?nav.offsetHeight:52;
+    document.documentElement.style.setProperty('--ficha-sticky-top', h+'px');
+  }
+  setStickyOffset();
+  window.addEventListener('resize', setStickyOffset);
+  window.addEventListener('load', setStickyOffset);
+  setTimeout(setStickyOffset, 300); /* recalcula tras cargar tipografías, que pueden cambiar la altura de la barra */
+
   var C=56.55, PROGS=["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "P10", "P11", "P12", "R2", "R3", "R4", "R5", "R7", "R13", "R14", "R18", "R20"];
   var chks=[].slice.call(document.querySelectorAll('input[data-chk]'));
   var eds=[].slice.call(document.querySelectorAll('[contenteditable][data-k]'));
