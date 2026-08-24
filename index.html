@@ -106,6 +106,8 @@ h1 em{font-style:italic; color:var(--band-ink-2)}
 .jump .sep{width:1px; height:15px; background:var(--rule-2); margin:0 8px}
 .jump .save{margin-left:auto; font-family:"IBM Plex Mono",monospace; font-size:10.5px;
   color:var(--ink-3); white-space:nowrap; padding:4px 0}
+#sheetlink:hover{background:var(--brand-soft)}
+#back-to-ficha:hover{background:var(--brand-soft); border-color:var(--brand-3)}
 
 /* ═══ secciones ═══ */
 main{padding-bottom:20px}
@@ -386,6 +388,10 @@ footer .wrap{max-width:74ch}
 <a href="#R20">R20</a>
 <span class="sep"></span>
 <a class="lbl" href="#consolidado">Consolidado</a><a class="lbl" href="#fuentes">Fuentes</a>
+<a id="sheetlink" href="#" target="_blank" rel="noopener" title="Abrir la planilla de Google Sheets" style="display:none; align-items:center; gap:5px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--brand-2); text-decoration:none; padding:4px 8px; border-radius:5px;">
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex:none"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+  Ver planilla
+</a>
 <span class="mono" id="userbadge" title="Clic para cambiar tu nombre" style="cursor:pointer; color:var(--ink-3); font-size:10.5px; padding:4px 8px;"></span>
 <span class="save" id="savestate"></span>
 </div></nav>
@@ -1285,6 +1291,12 @@ footer .wrap{max-width:74ch}
 <div class="tw"><table class=""><thead><tr><th class="">Fuente</th><th class="mono">Rol</th><th class="">Qué entrega</th><th class="">Advertencia</th></tr></thead><tbody><tr><td class="k">Servicio de Impuestos Internos</td><td class="mono">Ingresos y patrimonio</td><td>Formulario 22 (códigos de honorarios, rentas de capital e impuestos pagados), boletas de honorarios electrónicas, Formulario 29, declaraciones juradas 1887, 1812, 1879 y 2890, avalúos fiscales de bienes raíces y vehículos, sociedades y participación, tramos de venta, inicio y término de giro, categoría tributaria.</td><td>Se comprometió a entregar el indicador tal como se lo manda hoy al servicio y además una nota metodológica con la fórmula, los códigos y el formulario de origen. No entrega el algoritmo por reserva tributaria.</td></tr><tr><td class="k">Registro Social de Hogares — MDSF</td><td class="mono">Calificación Socioeconómica</td><td>Tramo de la CSE, ingreso equivalente corregido, índice de necesidades, variables 54 a 56 (ingreso laboral, de capital y de pensiones) y variables 60 a 66 (evaluación de medios: avalúos de vehículos y bienes raíces, personalidad jurídica).</td><td>Es la fuente de focalización de la mayoría de los programas del piloto. El SII entra ahí de forma indirecta, sin necesidad de convenio sectorial.</td></tr><tr><td class="k">Registro Civil e Identificación</td><td class="mono">Identidad y vínculos</td><td>Nombre, fecha de nacimiento y de defunción, sexo, nacionalidad, estado civil, discapacidad, RUN y datos de hijos, cónyuge y conviviente civil, títulos profesionales.</td><td>Convenio en borrador, entrega anual por SFTP. Es la pieza que permite construir GF2, el grupo familiar independiente de lo declarado.</td></tr><tr><td class="k">Policía de Investigaciones</td><td class="mono">Residencia efectiva</td><td>Movimientos migratorios de entrada y salida del país.</td><td>Es la única fuente capaz de testear el requisito de residencia de la PGU (20 años), del APS (5 de los últimos 6) y de la exención del 7%.</td></tr></tbody></table></div>
 </section>
 </main>
+<button id="back-to-ficha" type="button" title="Volver arriba de esta ficha" aria-label="Volver arriba de esta ficha"
+  style="display:none; position:fixed; right:24px; bottom:24px; z-index:25; width:42px; height:42px;
+  border-radius:50%; border:1px solid var(--rule); background:var(--surface); color:var(--brand-2);
+  box-shadow:var(--shadow-2); cursor:pointer; align-items:center; justify-content:center;">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 19V5"></path><path d="M5 12l7-7 7 7"></path></svg>
+</button>
 <footer><div class="wrap">Documento de trabajo interno. Los montos ejecutados 2025 provienen de la base de Monitoreo de programas sociales y no sociales. Las citas normativas deben verificarse contra el texto vigente a la fecha de concesión de cada beneficio antes de sustentar un hallazgo. Cada hipótesis tiene ancla propia — por ejemplo #P1-H7 — para citarla en actas y minutas.</div></footer>
 <script>
 (function(){
@@ -1298,6 +1310,45 @@ footer .wrap{max-width:74ch}
   window.addEventListener('resize', setStickyOffset);
   window.addEventListener('load', setStickyOffset);
   setTimeout(setStickyOffset, 300); /* recalcula tras cargar tipografías, que pueden cambiar la altura de la barra */
+
+  /* ── botón "volver arriba de esta ficha": aparece cuando estás lejos del
+     encabezado de una ficha abierta y te devuelve a su inicio ── */
+  (function backToFicha(){
+    var btn=document.getElementById('back-to-ficha');
+    if(!btn) return;
+    var current=null, ticking=false;
+    function evaluate(){
+      ticking=false;
+      var abiertas=[].slice.call(document.querySelectorAll('details.ficha[open]'));
+      if(!abiertas.length){ btn.style.display='none'; current=null; return; }
+      var navH=document.querySelector('.jump').offsetHeight;
+      var visible=null;
+      /* la ficha "activa" es la última cuyo encabezado ya pasó bajo la barra de nav */
+      abiertas.forEach(function(f){
+        var r=f.getBoundingClientRect();
+        if(r.top<=navH+4) visible=f;
+      });
+      if(!visible){ btn.style.display='none'; current=null; return; }
+      var body=visible.querySelector('.ficha-body');
+      var bodyRect=body?body.getBoundingClientRect():visible.getBoundingClientRect();
+      var lejos = bodyRect.top < -240; /* llevas scrolleado más de ~240px dentro del cuerpo */
+      current=visible;
+      btn.style.display = lejos ? 'flex' : 'none';
+    }
+    document.addEventListener('scroll', function(){
+      if(!ticking){ ticking=true; requestAnimationFrame(evaluate); }
+    }, {passive:true});
+    document.addEventListener('toggle', function(ev){
+      if(ev.target && ev.target.classList && ev.target.classList.contains('ficha')) evaluate();
+    }, true);
+    btn.addEventListener('click', function(){
+      if(!current) return;
+      var navH=document.querySelector('.jump').offsetHeight;
+      var y = current.getBoundingClientRect().top + window.scrollY - navH - 6;
+      window.scrollTo({top:y, behavior:'smooth'});
+    });
+    evaluate();
+  })();
 
   var C=56.55, PROGS=["P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "P10", "P11", "P12", "R2", "R3", "R4", "R5", "R7", "R13", "R14", "R18", "R20"];
   var chks=[].slice.call(document.querySelectorAll('input[data-chk]'));
@@ -1344,8 +1395,18 @@ footer .wrap{max-width:74ch}
   // 1) Despliega el Apps Script (ver Code.gs adjunto) como Web App.
   // 2) Pega aquí la URL que te entrega el despliegue (termina en /exec).
   var SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbx8Rs_90_sLXKEJrdVpmgYRHN5srPZeBqZ-VDLG_FtZAfliyugBy9wHmTywjmjfMLeh/exec';
+  // 3) Pega aquí el link normal de la planilla (el que abres en el navegador,
+  //    del tipo https://docs.google.com/spreadsheets/d/.../edit) para que
+  //    aparezca el botón "Ver planilla" en la barra de navegación.
+  var SHEET_VIEW_URL = 'https://docs.google.com/spreadsheets/d/1B0ovLfK7_7aN5rdrwvAg_cYFy2vV37sifvOJwauMmEM/edit?usp=sharing';
 
   function apiConfigured(){ return SHEETS_API_URL && SHEETS_API_URL.indexOf('https://') === 0; }
+  function sheetLinkConfigured(){ return SHEET_VIEW_URL && SHEET_VIEW_URL.indexOf('https://') === 0; }
+  (function setupSheetLink(){
+    var a=document.getElementById('sheetlink');
+    if(!a) return;
+    if(sheetLinkConfigured()){ a.href=SHEET_VIEW_URL; a.style.display='inline-flex'; }
+  })();
 
   /* ── claves legibles en Sheets: el HTML numera C0/H0 internamente, pero la
      columna visible dice "1", "H1"... Esto sube +1 solo al mandar/leer de Sheets,
