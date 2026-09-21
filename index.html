@@ -1944,7 +1944,9 @@ tr.nueva td.k{box-shadow:inset 2px 0 0 var(--brand-3)}
       .then(function(res){
         if(!res || !res.estado) throw 0;
         var remoto=fromSheetKeys_(res.estado);
-        var local=readLS(LS_KEY), pushed=readLS(LS_PUSHED);
+        var local=readLS(LS_KEY);
+        var pushedYaExiste = (function(){ try{ return localStorage.getItem(LS_PUSHED)!==null; }catch(e){ return false; } })();
+        var pushed = pushedYaExiste ? readLS(LS_PUSHED) : local;
         var unido=mergeState_(remoto, local, pushed);
         apply(unido); saveLocal(unido);
         /* si lo local aportó algo que Sheets no tenía, se devuelve a la planilla */
